@@ -1,0 +1,6 @@
+Sử dụng API sau: https://api.escuelajs.co/api/v1/products , chỉ cần viết hàm getall của dashboard
+- Viết thêm CSS cho bảng sao cho 1 dòng đen và 1 dòng trắng, nhớ hiển thị toàn bộ hình .
+- Thêm tìm kiếm theo title và sẽ thay đổi khi onChange
+- Chia trang cho dữ liệu , dữ liệu có thể hiển thị 5,10,20 mỗi trang
+- Có nút Sắp xếp ở các cột theo giá tăng giảm và tên tăng giảm
+- Ẩn cột description và chỉ hiển thị với event hoover
