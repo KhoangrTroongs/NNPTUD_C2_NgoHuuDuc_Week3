@@ -130,6 +130,9 @@ function displayProducts(products, searchTerm = '') {
     products.forEach((product, index) => {
         const row = document.createElement('tr');
 
+        // Lưu description vào data attribute
+        row.setAttribute('data-description', product.description);
+
         // Lấy hình ảnh đầu tiên từ mảng images và làm sạch URL
         let imageUrl = 'https://placehold.co/80x80?text=No+Image';
         if (product.images && product.images.length > 0) {
@@ -174,17 +177,6 @@ function displayProducts(products, searchTerm = '') {
         badge.textContent = product.category.name;
         tdCategory.appendChild(badge);
 
-        // Tạo tooltip nhỏ gọn cho description
-        const descriptionTooltip = document.createElement('div');
-        descriptionTooltip.className = 'description-tooltip';
-
-        // Rút gọn mô tả nếu quá dài (tối đa 150 ký tự)
-        const shortDescription = product.description.length > 150
-            ? product.description.substring(0, 150) + '...'
-            : product.description;
-
-        descriptionTooltip.textContent = shortDescription;
-
         // Thêm tất cả cells vào row
         row.appendChild(tdId);
         row.appendChild(tdImage);
@@ -192,11 +184,11 @@ function displayProducts(products, searchTerm = '') {
         row.appendChild(tdPrice);
         row.appendChild(tdCategory);
 
-        // Thêm tooltip vào row
-        row.appendChild(descriptionTooltip);
-
         tableBody.appendChild(row);
     });
+
+    // Khởi tạo tooltip cho các dòng mới
+    initializeTooltip();
 }
 
 // Hàm tìm kiếm sản phẩm theo title
@@ -254,6 +246,38 @@ function highlightText(text, searchTerm) {
 
     const regex = new RegExp(`(${searchTerm})`, 'gi');
     return text.replace(regex, '<span class="highlight">$1</span>');
+}
+
+// Khởi tạo tooltip cho description
+function initializeTooltip() {
+    const tooltip = document.getElementById('descriptionTooltip');
+    const rows = document.querySelectorAll('#productTableBody tr');
+
+    rows.forEach(row => {
+        // Khi di chuột vào dòng
+        row.addEventListener('mouseenter', function() {
+            const description = this.getAttribute('data-description');
+            if (description) {
+                tooltip.textContent = description;
+                tooltip.style.display = 'block';
+            }
+        });
+
+        // Khi di chuyển chuột trong dòng
+        row.addEventListener('mousemove', function(e) {
+            const description = this.getAttribute('data-description');
+            if (description) {
+                // Đặt vị trí tooltip theo con trỏ chuột (dùng clientX/Y thay vì pageX/Y)
+                tooltip.style.left = (e.clientX + 15) + 'px';
+                tooltip.style.top = (e.clientY + 15) + 'px';
+            }
+        });
+
+        // Khi di chuột ra khỏi dòng
+        row.addEventListener('mouseleave', function() {
+            tooltip.style.display = 'none';
+        });
+    });
 }
 
 // Khởi tạo event listeners cho search

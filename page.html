@@ -101,11 +101,11 @@
         }
 
         tbody tr {
-            position: relative;
+            transition: background-color 0.2s ease;
         }
 
         tbody tr:hover {
-            background-color: rgba(102, 126, 234, 0.1) !important;
+            background-color: rgba(102, 126, 234, 0.15) !important;
         }
 
         tbody td {
@@ -113,50 +113,21 @@
             border-bottom: 1px solid #ddd;
         }
 
-        /* Tooltip nhỏ gọn cho description */
-        .description-tooltip {
+        /* Tooltip description */
+        #descriptionTooltip {
             display: none;
-            position: absolute;
-            left: 100%;
-            top: 50%;
-            transform: translateY(-50%);
-            background: #2c3e50;
+            position: fixed;
+            background: rgba(44, 62, 80, 0.95);
             color: white;
-            padding: 8px 12px;
-            border-radius: 6px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
-            z-index: 1000;
-            width: 250px;
-            font-size: 0.85em;
-            line-height: 1.4;
-            margin-left: 10px;
-            white-space: normal;
-            border: 1px solid #667eea;
-        }
-
-        .description-tooltip::before {
-            content: '';
-            position: absolute;
-            right: 100%;
-            top: 50%;
-            transform: translateY(-50%);
-            border-right: 8px solid #2c3e50;
-            border-top: 8px solid transparent;
-            border-bottom: 8px solid transparent;
-        }
-
-        tbody tr:hover .description-tooltip {
-            display: block;
-            animation: fadeIn 0.2s ease;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
+            padding: 10px 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            z-index: 10000;
+            max-width: 350px;
+            font-size: 0.9em;
+            line-height: 1.5;
+            border: 2px solid #667eea;
+            pointer-events: none;
         }
 
         .product-image {
@@ -557,6 +528,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Tooltip cho description -->
+    <div id="descriptionTooltip"></div>
 
     <script src="main.js"></script>
 </body>
