@@ -65,6 +65,7 @@ async function getAll() {
         initializeSearch();
         initializePagination();
         initializeSorting();
+        initializeGallery();
 
         console.log(`✅ Đã tải thành công ${products.length} sản phẩm`);
 
@@ -103,7 +104,7 @@ function displayStats(products) {
 
 // Hàm làm sạch URL hình ảnh (loại bỏ dấu ngoặc kép và ký tự lạ)
 function cleanImageUrl(url) {
-    if (!url) return 'https://placehold.co/80x80?text=No+Image';
+    if (!url) return null;
 
     // Chuyển thành string và loại bỏ khoảng trắng
     let cleanUrl = String(url).trim();
@@ -116,10 +117,14 @@ function cleanImageUrl(url) {
 
     // Kiểm tra xem có phải URL hợp lệ không
     if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')) {
+        // Bỏ qua các URL placeholder mặc định
+        if (cleanUrl.includes('placehold.co') && !cleanUrl.includes('text=')) {
+            return null;
+        }
         return cleanUrl;
     }
 
-    return 'https://placehold.co/80x80?text=Invalid+URL';
+    return null;
 }
 
 // Hàm hiển thị sản phẩm trong bảng
@@ -133,26 +138,62 @@ function displayProducts(products, searchTerm = '') {
         // Lưu description vào data attribute
         row.setAttribute('data-description', product.description);
 
-        // Lấy hình ảnh đầu tiên từ mảng images và làm sạch URL
-        let imageUrl = 'https://placehold.co/80x80?text=No+Image';
+        // Lấy hình ảnh từ mảng images và làm sạch URL
+        let imageUrls = [];
+
         if (product.images && product.images.length > 0) {
-            imageUrl = cleanImageUrl(product.images[0]);
-            if (index < 3) { // Chỉ log 3 sản phẩm đầu để tránh spam console
-                console.log(`Sản phẩm ${index + 1}: ${product.title} - URL: ${imageUrl}`);
-            }
+            // Làm sạch tất cả URLs và lọc bỏ null
+            imageUrls = product.images
+                .map(url => cleanImageUrl(url))
+                .filter(url => url !== null);
         }
+
+        // Tạo placeholder với tên sản phẩm
+        const productName = encodeURIComponent(product.title.substring(0, 20));
+        const defaultPlaceholder = `https://placehold.co/80x80/667eea/white?text=${productName}`;
+        const imageUrl = imageUrls.length > 0 ? imageUrls[0] : defaultPlaceholder;
 
         // Tạo các cell riêng biệt
         const tdId = document.createElement('td');
         tdId.textContent = product.id;
 
         const tdImage = document.createElement('td');
+        tdImage.className = 'image-cell';
+
         const img = document.createElement('img');
         img.src = imageUrl;
         img.alt = product.title;
         img.className = 'product-image';
+
+        // Lưu tất cả URLs vào data attribute để dùng cho gallery
+        img.setAttribute('data-images', JSON.stringify(imageUrls.length > 0 ? imageUrls : [defaultPlaceholder]));
+        img.setAttribute('data-product-title', product.title);
+
+        // Thêm badge hiển thị số lượng hình nếu có nhiều hơn 1 hình
+        if (imageUrls.length > 1) {
+            const badge = document.createElement('span');
+            badge.className = 'image-count-badge';
+            badge.textContent = `📷 ${imageUrls.length}`;
+            tdImage.appendChild(badge);
+        }
+
+        // Click vào hình để mở gallery
+        img.addEventListener('click', function() {
+            const images = JSON.parse(this.getAttribute('data-images'));
+            const title = this.getAttribute('data-product-title');
+            openGallery(images, title);
+        });
+
+        // Thử các URL khác nếu URL đầu tiên bị lỗi
+        let currentImageIndex = 0;
         img.onerror = function() {
-            this.src = 'https://placehold.co/80x80?text=Error';
+            currentImageIndex++;
+            if (currentImageIndex < imageUrls.length) {
+                this.src = imageUrls[currentImageIndex];
+            } else {
+                // Sử dụng placeholder với tên sản phẩm
+                this.src = defaultPlaceholder;
+            }
         };
         tdImage.appendChild(img);
 
@@ -637,6 +678,103 @@ function changePageSize(newSize) {
     // Đồng bộ cả 2 select box
     document.getElementById('pageSizeTop').value = newSize;
     document.getElementById('pageSizeBottom').value = newSize;
+}
+
+// ==================== GALLERY FUNCTIONS ====================
+
+let currentGalleryImages = [];
+let currentGalleryIndex = 0;
+
+// Hàm mở gallery
+function openGallery(images, title) {
+    currentGalleryImages = images;
+    currentGalleryIndex = 0;
+
+    const gallery = document.getElementById('imageGallery');
+    const overlay = document.getElementById('galleryOverlay');
+    const galleryTitle = document.getElementById('galleryTitle');
+
+    galleryTitle.textContent = title;
+
+    // Hiển thị gallery
+    gallery.classList.add('active');
+    overlay.classList.add('active');
+
+    // Hiển thị hình đầu tiên
+    showGalleryImage(0);
+}
+
+// Hàm đóng gallery
+function closeGallery() {
+    const gallery = document.getElementById('imageGallery');
+    const overlay = document.getElementById('galleryOverlay');
+
+    gallery.classList.remove('active');
+    overlay.classList.remove('active');
+}
+
+// Hàm hiển thị hình trong gallery
+function showGalleryImage(index) {
+    currentGalleryIndex = index;
+
+    const galleryImage = document.getElementById('galleryImage');
+    const counter = document.getElementById('galleryCounter');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    // Cập nhật hình ảnh
+    galleryImage.src = currentGalleryImages[index];
+
+    // Cập nhật counter
+    counter.textContent = `${index + 1} / ${currentGalleryImages.length}`;
+
+    // Disable/Enable buttons
+    prevBtn.disabled = index === 0;
+    nextBtn.disabled = index === currentGalleryImages.length - 1;
+}
+
+// Hàm chuyển sang hình trước
+function prevGalleryImage() {
+    if (currentGalleryIndex > 0) {
+        showGalleryImage(currentGalleryIndex - 1);
+    }
+}
+
+// Hàm chuyển sang hình sau
+function nextGalleryImage() {
+    if (currentGalleryIndex < currentGalleryImages.length - 1) {
+        showGalleryImage(currentGalleryIndex + 1);
+    }
+}
+
+// Khởi tạo gallery event listeners
+function initializeGallery() {
+    const closeBtn = document.getElementById('galleryClose');
+    const overlay = document.getElementById('galleryOverlay');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    // Đóng gallery
+    closeBtn.addEventListener('click', closeGallery);
+    overlay.addEventListener('click', closeGallery);
+
+    // Điều hướng
+    prevBtn.addEventListener('click', prevGalleryImage);
+    nextBtn.addEventListener('click', nextGalleryImage);
+
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        const gallery = document.getElementById('imageGallery');
+        if (gallery.classList.contains('active')) {
+            if (e.key === 'ArrowLeft') {
+                prevGalleryImage();
+            } else if (e.key === 'ArrowRight') {
+                nextGalleryImage();
+            } else if (e.key === 'Escape') {
+                closeGallery();
+            }
+        }
+    });
 }
 
 // Khởi tạo event listeners cho pagination
